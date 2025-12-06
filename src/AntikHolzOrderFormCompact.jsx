@@ -116,7 +116,7 @@ const AntikHolzOrderFormCompact = () => {
     notes: '',
   });
 
-  const [showExtras, setShowExtras] = useState(false);
+  const [showExtras, setShowExtras] = useState(true);
   const [showSpecs, setShowSpecs] = useState(false);
   const [showFAQ, setShowFAQ] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -308,12 +308,12 @@ ${formData.notes ? `Uwagi: ${formData.notes}` : ''}
 
               {/* Galeria zdjęć wybranego koloru */}
               {formData.colorId && (
-                <div className="mt-4 grid grid-cols-5 gap-2">
+                <div className="mt-4 grid grid-cols-5 gap-2" style={{ height: '280px' }}>
                   {COLORS.find(c => c.id === formData.colorId)?.gallery.map((img, index) => (
                     <div
                       key={index}
-                      className="aspect-square overflow-hidden border"
-                      style={{ borderColor: customStyles.primaryColor }}
+                      className="overflow-hidden border"
+                      style={{ borderColor: customStyles.primaryColor, height: '100%' }}
                     >
                       <img
                         src={img}
@@ -405,7 +405,7 @@ ${formData.notes ? `Uwagi: ${formData.notes}` : ''}
                       type="number"
                       step="0.1"
                       min="8"
-                      max="14"
+                      max="16"
                       value={formData.fixedWidth}
                       onChange={(e) => setFormData({...formData, fixedWidth: e.target.value})}
                       placeholder="np. 10"
@@ -413,7 +413,7 @@ ${formData.notes ? `Uwagi: ${formData.notes}` : ''}
                       style={{ borderColor: customStyles.primaryColor, color: customStyles.textPrimary }}
                     />
                     <p className="text-xs mt-1" style={{ color: customStyles.textMuted }}>
-                      Standardowo: 8-14 cm losowo
+                      Standardowo: 8-16 cm losowo
                     </p>
                   </div>
                 )}
