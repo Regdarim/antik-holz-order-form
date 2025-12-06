@@ -19,11 +19,71 @@ import { customStyles } from './config/theme';
 
 // Dane z oryginalnego komponentu
 const COLORS = [
-  { id: 1, name: 'Jasny brąz', color: '#C4A269', extraCost: 0 },
-  { id: 2, name: 'Naturalny mix', color: '#8B6914', extraCost: 0 },
-  { id: 3, name: 'Szary', color: '#9CA3AF', extraCost: 0 },
-  { id: 4, name: 'Mix', gradient: 'linear-gradient(135deg, #8B6914 0%, #9CA3AF 100%)', extraCost: 0 },
-  { id: 5, name: 'Ciemny brąz', color: '#4A3728', extraCost: 10 },
+  {
+    id: 1,
+    name: 'Jasny brąz',
+    color: '#C4A269',
+    extraCost: 0,
+    gallery: [
+      'https://antikholzprofis.com/wp-content/uploads/2024/01/jasny-braz-1.jpg',
+      'https://antikholzprofis.com/wp-content/uploads/2024/01/jasny-braz-2.jpg',
+      'https://antikholzprofis.com/wp-content/uploads/2024/01/jasny-braz-3.jpg',
+      'https://antikholzprofis.com/wp-content/uploads/2024/01/jasny-braz-4.jpg',
+      'https://antikholzprofis.com/wp-content/uploads/2024/01/jasny-braz-5.jpg',
+    ]
+  },
+  {
+    id: 2,
+    name: 'Naturalny mix',
+    color: '#8B6914',
+    extraCost: 0,
+    gallery: [
+      'https://antikholzprofis.com/wp-content/uploads/2024/01/naturalny-mix-1.jpg',
+      'https://antikholzprofis.com/wp-content/uploads/2024/01/naturalny-mix-2.jpg',
+      'https://antikholzprofis.com/wp-content/uploads/2024/01/naturalny-mix-3.jpg',
+      'https://antikholzprofis.com/wp-content/uploads/2024/01/naturalny-mix-4.jpg',
+      'https://antikholzprofis.com/wp-content/uploads/2024/01/naturalny-mix-5.jpg',
+    ]
+  },
+  {
+    id: 3,
+    name: 'Szary',
+    color: '#9CA3AF',
+    extraCost: 0,
+    gallery: [
+      'https://antikholzprofis.com/wp-content/uploads/2024/01/szary-1.jpg',
+      'https://antikholzprofis.com/wp-content/uploads/2024/01/szary-2.jpg',
+      'https://antikholzprofis.com/wp-content/uploads/2024/01/szary-3.jpg',
+      'https://antikholzprofis.com/wp-content/uploads/2024/01/szary-4.jpg',
+      'https://antikholzprofis.com/wp-content/uploads/2024/01/szary-5.jpg',
+    ]
+  },
+  {
+    id: 4,
+    name: 'Mix',
+    gradient: 'linear-gradient(135deg, #8B6914 0%, #9CA3AF 100%)',
+    extraCost: 0,
+    gallery: [
+      'https://antikholzprofis.com/wp-content/uploads/2024/01/mix-1.jpg',
+      'https://antikholzprofis.com/wp-content/uploads/2024/01/mix-2.jpg',
+      'https://antikholzprofis.com/wp-content/uploads/2024/01/mix-3.jpg',
+      'https://antikholzprofis.com/wp-content/uploads/2024/01/mix-4.jpg',
+      'https://antikholzprofis.com/wp-content/uploads/2024/01/mix-5.jpg',
+    ]
+  },
+  {
+    id: 5,
+    name: 'Ciemny brąz',
+    color: '#4A3728',
+    extraCost: 10,
+    gallery: [
+      'https://antikholzprofis.com/wp-content/uploads/2024/01/ciemny-braz-1.jpg',
+      'https://antikholzprofis.com/wp-content/uploads/2024/01/ciemny-braz-2.jpg',
+      'https://antikholzprofis.com/wp-content/uploads/2024/01/ciemny-braz-3.jpg',
+      'https://antikholzprofis.com/wp-content/uploads/2024/01/ciemny-braz-4.jpg',
+      'https://antikholzprofis.com/wp-content/uploads/2024/01/ciemny-braz-5.jpg',
+    ]
+  },
 ];
 
 const PACKAGES = [
@@ -48,6 +108,8 @@ const AntikHolzOrderFormCompact = () => {
     colorId: 2,
     packageId: 'standard-plus',
     extras: [],
+    fixedWidth: '',
+    fixedLength: '',
     email: '',
     phone: '',
     address: '',
@@ -57,6 +119,47 @@ const AntikHolzOrderFormCompact = () => {
   const [showExtras, setShowExtras] = useState(false);
   const [showSpecs, setShowSpecs] = useState(false);
   const [showFAQ, setShowFAQ] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  // Funkcja kopiowania zamówienia do schowka
+  const copyOrderToClipboard = () => {
+    const selectedColor = COLORS.find(c => c.id === formData.colorId);
+    const selectedPackage = PACKAGES.find(p => p.id === formData.packageId);
+    const selectedExtras = formData.extras.map(id =>
+      EXTRA_OPTIONS.find(opt => opt.id === id)?.name
+    ).filter(Boolean);
+
+    const orderText = `
+ZAMÓWIENIE ANTIK-HOLZ
+======================
+
+Powierzchnia: ${formData.sqm} m²
+Pakiet: ${selectedPackage?.name}
+Kolor: ${selectedColor?.name}
+${selectedExtras.length > 0 ? `Opcje dodatkowe:\n${selectedExtras.map(e => `  - ${e}`).join('\n')}` : ''}
+${formData.fixedWidth ? `Stała szerokość: ${formData.fixedWidth} cm` : ''}
+${formData.fixedLength ? `Stała długość: ${formData.fixedLength} cm` : ''}
+
+CENA:
+-----
+Cena za m²: ${calculatedPrice.pricePerSqm} zł
+Powierzchnia: ${formData.sqm} m² × ${calculatedPrice.pricePerSqm} zł = ${calculatedPrice.subtotal.toFixed(2)} zł
+Wysyłka: ${calculatedPrice.shipping} zł
+RAZEM: ${calculatedPrice.total.toFixed(2)} zł
+
+DANE KONTAKTOWE:
+----------------
+Email: ${formData.email || '[nie podano]'}
+Telefon: ${formData.phone || '[nie podano]'}
+Adres: ${formData.address || '[nie podano]'}
+${formData.notes ? `Uwagi: ${formData.notes}` : ''}
+    `.trim();
+
+    navigator.clipboard.writeText(orderText).then(() => {
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    });
+  };
 
   // Kalkulacja ceny
   const calculatedPrice = useMemo(() => {
@@ -202,6 +305,26 @@ const AntikHolzOrderFormCompact = () => {
                 {COLORS.find(c => c.id === formData.colorId)?.name}
                 {COLORS.find(c => c.id === formData.colorId)?.extraCost > 0 && ' (+10 zł/m²)'}
               </p>
+
+              {/* Galeria zdjęć wybranego koloru */}
+              {formData.colorId && (
+                <div className="mt-4 grid grid-cols-5 gap-2">
+                  {COLORS.find(c => c.id === formData.colorId)?.gallery.map((img, index) => (
+                    <div
+                      key={index}
+                      className="aspect-square overflow-hidden border"
+                      style={{ borderColor: customStyles.primaryColor }}
+                    >
+                      <img
+                        src={img}
+                        alt={`${COLORS.find(c => c.id === formData.colorId)?.name} - ${index + 1}`}
+                        className="w-full h-full object-cover hover:scale-110 transition-transform cursor-pointer"
+                        onClick={() => window.open(img, '_blank')}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* 3. PAKIET */}
@@ -242,33 +365,81 @@ const AntikHolzOrderFormCompact = () => {
             </button>
 
             {showExtras && (
-              <div className="grid md:grid-cols-2 gap-3 mt-4">
-                {EXTRA_OPTIONS.map(option => (
-                  <label
-                    key={option.id}
-                    className="flex items-center gap-3 p-3 cursor-pointer transition-all"
-                    style={{
-                      backgroundColor: formData.extras.includes(option.id) ? customStyles.bgBeige : customStyles.bgGray,
-                      border: `1px solid ${formData.extras.includes(option.id) ? customStyles.primaryColor : '#E5E5E5'}`,
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={formData.extras.includes(option.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setFormData({...formData, extras: [...formData.extras, option.id]});
-                        } else {
-                          setFormData({...formData, extras: formData.extras.filter(id => id !== option.id)});
-                        }
+              <div className="space-y-4 mt-4">
+                <div className="grid md:grid-cols-2 gap-3">
+                  {EXTRA_OPTIONS.map(option => (
+                    <label
+                      key={option.id}
+                      className="flex items-center gap-3 p-3 cursor-pointer transition-all"
+                      style={{
+                        backgroundColor: formData.extras.includes(option.id) ? customStyles.bgBeige : customStyles.bgGray,
+                        border: `1px solid ${formData.extras.includes(option.id) ? customStyles.primaryColor : '#E5E5E5'}`,
                       }}
-                      style={{ accentColor: customStyles.primaryColor }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.extras.includes(option.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData({...formData, extras: [...formData.extras, option.id]});
+                          } else {
+                            setFormData({...formData, extras: formData.extras.filter(id => id !== option.id)});
+                          }
+                        }}
+                        style={{ accentColor: customStyles.primaryColor }}
+                      />
+                      <span className="text-sm" style={{ color: customStyles.textPrimary }}>
+                        {option.name}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+
+                {/* Pola dla stałej szerokości */}
+                {formData.extras.includes('fixed-width') && (
+                  <div className="p-4" style={{ backgroundColor: customStyles.bgBeige, border: `2px solid ${customStyles.primaryColor}` }}>
+                    <label className="block text-sm font-bold mb-2" style={{ color: customStyles.textPrimary }}>
+                      Podaj stałą szerokość (w cm):
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="8"
+                      max="14"
+                      value={formData.fixedWidth}
+                      onChange={(e) => setFormData({...formData, fixedWidth: e.target.value})}
+                      placeholder="np. 10"
+                      className="w-full px-4 py-2 border-2 focus:outline-none focus:ring-2"
+                      style={{ borderColor: customStyles.primaryColor, color: customStyles.textPrimary }}
                     />
-                    <span className="text-sm" style={{ color: customStyles.textPrimary }}>
-                      {option.name}
-                    </span>
-                  </label>
-                ))}
+                    <p className="text-xs mt-1" style={{ color: customStyles.textMuted }}>
+                      Standardowo: 8-14 cm losowo
+                    </p>
+                  </div>
+                )}
+
+                {/* Pola dla stałej długości */}
+                {formData.extras.includes('fixed-length') && (
+                  <div className="p-4" style={{ backgroundColor: customStyles.bgBeige, border: `2px solid ${customStyles.primaryColor}` }}>
+                    <label className="block text-sm font-bold mb-2" style={{ color: customStyles.textPrimary }}>
+                      Podaj stałą długość (w cm):
+                    </label>
+                    <input
+                      type="number"
+                      step="1"
+                      min="50"
+                      max="400"
+                      value={formData.fixedLength}
+                      onChange={(e) => setFormData({...formData, fixedLength: e.target.value})}
+                      placeholder="np. 150"
+                      className="w-full px-4 py-2 border-2 focus:outline-none focus:ring-2"
+                      style={{ borderColor: customStyles.primaryColor, color: customStyles.textPrimary }}
+                    />
+                    <p className="text-xs mt-1" style={{ color: customStyles.textMuted }}>
+                      Zgodnie z wybranym pakietem
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -282,9 +453,18 @@ const AntikHolzOrderFormCompact = () => {
             className="p-6 mb-6 shadow-md"
             style={{ backgroundColor: customStyles.bgBeige }}
           >
-            <h3 className="text-xl font-bold mb-4" style={{ color: customStyles.textPrimary }}>
-              Podsumowanie zamówienia
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold" style={{ color: customStyles.textPrimary }}>
+                Podsumowanie zamówienia
+              </h3>
+              <button
+                onClick={copyOrderToClipboard}
+                className="px-4 py-2 text-sm font-medium text-white transition-all hover:opacity-90"
+                style={{ backgroundColor: copySuccess ? '#10B981' : customStyles.primaryColor }}
+              >
+                {copySuccess ? 'Skopiowano!' : 'Kopiuj do schowka'}
+              </button>
+            </div>
 
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
