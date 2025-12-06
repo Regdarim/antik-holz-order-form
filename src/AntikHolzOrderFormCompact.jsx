@@ -29,7 +29,7 @@ const COLORS = [
 const PACKAGES = [
   { id: 'mini', name: 'MINI 50-70cm', price: 135 },
   { id: 'standard', name: 'STANDARD 50-100cm', price: 145 },
-  { id: 'standard-plus', name: 'STANDARD+ 50-150cm ★', price: 155, popular: true },
+  { id: 'standard-plus', name: 'STANDARD+ 50-150cm', price: 155, popular: true },
   { id: 'komfort', name: 'KOMFORT 100-150cm', price: 165 },
   { id: 'komfort-plus', name: 'KOMFORT+ 100-190cm', price: 175 },
   { id: 'long', name: 'DŁUGIE 190-400cm', price: 285 },
@@ -119,7 +119,7 @@ const AntikHolzOrderFormCompact = () => {
               className="px-6 py-3 text-sm font-bold bg-white transition-all hover:scale-105"
               style={{ color: customStyles.primaryColor }}
             >
-              ZAMÓW TERAZ →
+              ZAMÓW TERAZ
             </button>
           </div>
         </div>
@@ -141,7 +141,7 @@ const AntikHolzOrderFormCompact = () => {
           }}
         >
           <h2 className="text-2xl font-bold mb-6" style={{ color: customStyles.textPrimary }}>
-            🎯 Szybki Konfigurator
+            Konfiguracja zamówienia
           </h2>
 
           <div className="grid md:grid-cols-3 gap-6">
@@ -191,7 +191,7 @@ const AntikHolzOrderFormCompact = () => {
                       {isSelected && (
                         <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center"
                           style={{ backgroundColor: customStyles.primaryColor }}>
-                          <span className="text-white text-xs">✓</span>
+                          <span className="text-white text-xs">•</span>
                         </div>
                       )}
                     </button>
@@ -237,7 +237,7 @@ const AntikHolzOrderFormCompact = () => {
               className="flex items-center justify-between w-full text-left font-medium transition-colors hover:opacity-70"
               style={{ color: customStyles.textPrimary }}
             >
-              <span>➕ Opcje dodatkowe (4 dostępne)</span>
+              <span>Opcje dodatkowe (4 dostępne)</span>
               <span className="text-2xl">{showExtras ? '−' : '+'}</span>
             </button>
 
@@ -283,7 +283,7 @@ const AntikHolzOrderFormCompact = () => {
             style={{ backgroundColor: customStyles.bgBeige }}
           >
             <h3 className="text-xl font-bold mb-4" style={{ color: customStyles.textPrimary }}>
-              📋 Twoje zamówienie
+              Podsumowanie zamówienia
             </h3>
 
             <div className="space-y-2 text-sm">
@@ -327,7 +327,7 @@ const AntikHolzOrderFormCompact = () => {
           style={{ backgroundColor: customStyles.bgLight }}
         >
           <h2 className="text-2xl font-bold mb-6" style={{ color: customStyles.textPrimary }}>
-            📞 Dane kontaktowe
+            Dane kontaktowe
           </h2>
 
           <div className="grid md:grid-cols-2 gap-4">
@@ -372,7 +372,7 @@ const AntikHolzOrderFormCompact = () => {
             className="w-full mt-6 py-4 text-white font-bold text-lg transition-all hover:opacity-90"
             style={{ backgroundColor: customStyles.primaryColor }}
           >
-            WYŚLIJ ZAPYTANIE OFERTOWE →
+            WYŚLIJ ZAPYTANIE OFERTOWE
           </button>
         </section>
 
@@ -382,7 +382,7 @@ const AntikHolzOrderFormCompact = () => {
         <details className="mb-4" style={{ backgroundColor: customStyles.bgLight }}>
           <summary className="p-4 cursor-pointer font-bold flex justify-between items-center"
             style={{ color: customStyles.textPrimary }}>
-            <span>📐 Specyfikacja techniczna</span>
+            <span>Specyfikacja techniczna</span>
             <span className="text-2xl">+</span>
           </summary>
           <div className="p-4 space-y-2 text-sm">
@@ -411,7 +411,7 @@ const AntikHolzOrderFormCompact = () => {
         <details className="mb-4" style={{ backgroundColor: customStyles.bgLight }}>
           <summary className="p-4 cursor-pointer font-bold flex justify-between items-center"
             style={{ color: customStyles.textPrimary }}>
-            <span>❓ Najczęstsze pytania</span>
+            <span>Najczęstsze pytania</span>
             <span className="text-2xl">+</span>
           </summary>
           <div className="p-4 space-y-4">
