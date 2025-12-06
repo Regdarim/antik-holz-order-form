@@ -1,12 +1,15 @@
 {
   "name": "antik-holz-order-form",
   "version": "1.0.0",
+  "type": "module",
   "description": "Formularz zamówień dla ANTIK-HOLZ - stare deski rustykalne ze stodoły",
   "main": "src/AntikHolzOrderForm.jsx",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "npm run dev",
+    "test": "npm run build && npm run preview"
   },
   "keywords": [
     "antik-holz",
