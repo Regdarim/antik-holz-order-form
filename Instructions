@@ -1,0 +1,984 @@
+Zaktualizowałem plan o wymagania dotyczące dwóch osobnych widoków (admin + klient) oraz brak integracji płatności.
+Kluczowe zmiany w planie:
+1. Dwa oddzielne widoki:
+Widok klienta - obecny formularz zamówienia ze wszystkimi produktami
+Widok admina - panel do zarządzania zamówieniami i katalogiem
+2. Nowa kolekcja Order w Strapi:
+Przechowuje wszystkie złożone zamówienia
+Statusy: new → quoted → confirmed → in_production → shipped → completed
+Pełne dane klienta + snapshot cen z momentu zamówienia
+3. Admin Panel zawiera:
+Login - proste hasło (później Strapi auth)
+Dashboard - statystyki zamówień
+Zamówienia - lista, szczegóły, zmiana statusu
+Katalog - edycja produktów przez Strapi admin
+4. Routing:
+/ → widok klienta (Stare Deski)
+/admin/login → logowanie
+/admin/dashboard → panel główny
+/admin/orders → zarządzanie zamówieniami
+/admin/catalog → zarządzanie katalogiem (Strapi)
+5. Brak płatności:
+Zamówienia składane przez formularz/email
+Status "quoted" - wysłanie wyceny do klienta
+Płatność po akceptacji wyceny (poza systemem)
+Plan jest gotowy do implementacji. Czy chcesz, żebym rozpoczął Fazę 1 (ekstrakcja komponentów)?
+Claude’s Plan
+Plan: Restructure ANTIK-HOLZ for Multi-Product CMS Integration
+📋 Overview
+Transform the monolithic ANTIK-HOLZ order form into a scalable, CMS-driven multi-product platform while maintaining the light minimalistic design system defined in CLAUDE.md. Current State: 1356-line monolithic React component with hardcoded product data Target State: Modular component architecture with CMS-managed product catalog supporting multiple product types (Deski, Belki, Panele ścienne, Płyty meblowe, Deski podłogowe)
+🎯 Goals
+Enable CMS-driven product management - no code deploys for catalog changes
+Support multiple product types with shared UI components
+Maintain design consistency via CLAUDE.md style guide across all products
+Preserve existing functionality - zero breaking changes during migration
+Enable future scaling - easy to add new products, pricing models, form fields
+Two separate views:
+Customer View (Frontend) - order form for end customers
+Admin View (Dashboard) - order management and catalog editing for business owner
+No payment integration - orders submitted via email/form only (payment handling later)
+🏗️ Technology Stack Selection
+Backend & CMS: Strapi 4.x ✅
+Why Strapi:
+✅ Headless CMS with powerful content modeling
+✅ Built-in REST & GraphQL APIs
+✅ Polish admin panel UI (important for non-technical users)
+✅ Media library for product images
+✅ Role-based permissions for catalog management
+✅ Easy local development + deployment
+✅ PostgreSQL support for production reliability
+Alternatives considered:
+❌ Payload CMS - too developer-focused, steeper learning curve
+❌ Custom API - too much development time, reinventing the wheel
+❌ Contentful/Sanity - paid services, vendor lock-in
+Database: PostgreSQL ✅
+Why PostgreSQL:
+✅ Reliable relational model for structured product data
+✅ JSONB support for flexible product configurations
+✅ Free and open-source
+✅ Excellent Strapi integration
+Frontend State Management: TanStack Query (React Query) ✅
+Why TanStack Query:
+✅ Perfect for fetching/caching CMS data
+✅ Built-in loading/error states
+✅ Automatic background refetching
+✅ Minimal boilerplate vs Redux
+✅ Works great with REST APIs
+Alternatives considered:
+❌ Redux/Zustand - overkill for read-heavy catalog data
+❌ Context API only - no caching, poor performance
+Form Management: React Hook Form + Zod ✅
+Why React Hook Form + Zod:
+✅ Better performance than current manual state management
+✅ Zod provides type-safe validation schemas
+✅ Easy to make forms dynamic based on product config
+✅ Minimal re-renders
+Styling: TailwindCSS 3.x (keep current) ✅
+Already implemented
+Works perfectly with CLAUDE.md design system
+No migration needed
+📂 New Project Structure
+antik-holz-order-form/
+├── backend/                          # NEW: Strapi CMS
+│   ├── src/
+│   │   ├── api/
+│   │   │   ├── product/
+│   │   │   │   ├── content-types/
+│   │   │   │   │   └── product/
+│   │   │   │   │       └── schema.json
+│   │   │   ├── product-color/
+│   │   │   ├── package-option/
+│   │   │   ├── extra-option/
+│   │   │   ├── technical-spec/
+│   │   │   ├── feature/
+│   │   │   └── faq/
+│   │   ├── config/
+│   │   └── database/
+│   ├── package.json
+│   └── .env
+│
+├── src/
+│   ├── components/                   # NEW: Reusable UI components
+│   │   ├── ui/                       # Tier 1: Basic components
+│   │   │   ├── Button.jsx
+│   │   │   ├── Card.jsx
+│   │   │   ├── FormField.jsx
+│   │   │   ├── FormCheckbox.jsx
+│   │   │   ├── Section.jsx
+│   │   │   ├── Badge.jsx
+│   │   │   ├── Table.jsx            # NEW: For admin order list
+│   │   │   └── Modal.jsx            # NEW: For admin dialogs
+│   │   ├── product/                  # Tier 2: Product-specific
+│   │   │   ├── ColorSwatch.jsx
+│   │   │   ├── PricingCard.jsx
+│   │   │   ├── FeatureCard.jsx
+│   │   │   ├── SpecRow.jsx
+│   │   │   └── FAQItem.jsx
+│   │   └── layout/                   # Layout components
+│   │       ├── Header.jsx
+│   │       ├── Hero.jsx
+│   │       ├── Footer.jsx
+│   │       └── AdminLayout.jsx      # NEW: Admin panel layout
+│   │
+│   ├── features/                     # NEW: Feature-based modules
+│   │   ├── customer/                 # Customer-facing features
+│   │   │   ├── order-form/
+│   │   │   │   ├── ProductConfigurator.jsx
+│   │   │   │   ├── OrderForm.jsx
+│   │   │   │   ├── OrderSummary.jsx
+│   │   │   │   └── SuccessModal.jsx
+│   │   │   ├── catalog/
+│   │   │   │   ├── ColorSection.jsx
+│   │   │   │   ├── PackageSection.jsx
+│   │   │   │   └── SpecSection.jsx
+│   │   │   └── faq/
+│   │   │       └── FAQSection.jsx
+│   │   │
+│   │   └── admin/                    # NEW: Admin panel features
+│   │       ├── orders/
+│   │       │   ├── OrderList.jsx
+│   │       │   ├── OrderDetails.jsx
+│   │       │   └── OrderStatusBadge.jsx
+│   │       ├── catalog/
+│   │       │   ├── ProductList.jsx
+│   │       │   ├── ProductEditor.jsx
+│   │       │   ├── ColorManager.jsx
+│   │       │   ├── PackageManager.jsx
+│   │       │   └── FAQManager.jsx
+│   │       └── dashboard/
+│   │           ├── DashboardHome.jsx
+│   │           └── StatsWidget.jsx
+│   │
+│   ├── hooks/                        # NEW: Custom hooks
+│   │   ├── useOrderForm.js
+│   │   ├── usePriceCalculation.js
+│   │   ├── useProductCatalog.js
+│   │   └── useFormValidation.js
+│   │
+│   ├── lib/                          # NEW: Business logic & utilities
+│   │   ├── api/
+│   │   │   └── strapi.js            # Strapi API client
+│   │   ├── validation/
+│   │   │   └── orderSchema.js       # Zod schemas
+│   │   └── utils/
+│   │       ├── pricing.js
+│   │       ├── orderSummary.js
+│   │       └── formatters.js
+│   │
+│   ├── config/                       # NEW: Configuration
+│   │   ├── theme.js                 # From CLAUDE.md customStyles
+│   │   └── constants.js
+│   │
+│   ├── pages/                        # NEW: Pages
+│   │   ├── customer/                # Customer pages
+│   │   │   ├── StareDescki.jsx    # Current product
+│   │   │   ├── Belki.jsx          # Future product
+│   │   │   └── PaneleScienne.jsx  # Future product
+│   │   │
+│   │   └── admin/                   # NEW: Admin pages
+│   │       ├── Login.jsx           # Simple password login
+│   │       ├── Dashboard.jsx       # Main admin dashboard
+│   │       ├── Orders.jsx          # Order management
+│   │       └── Catalog.jsx         # Product catalog management
+│   │
+│   ├── AntikHolzOrderForm.jsx      # KEEP: Will become wrapper
+│   ├── App.jsx
+│   └── main.jsx
+│
+├── CLAUDE.md                         # KEEP: Design system guide
+├── package.json
+└── README.md
+🗄️ CMS Data Model (Strapi Schema)
+1. Product (Main Collection)
+{
+  "singularName": "product",
+  "pluralName": "products",
+  "displayName": "Product",
+  "attributes": {
+    "name": { "type": "string", "required": true },
+    "slug": { "type": "uid", "targetField": "name" },
+    "description": { "type": "text" },
+    "longDescription": { "type": "richtext" },
+    "isActive": { "type": "boolean", "default": true },
+
+    // Relations
+    "colors": { "type": "relation", "relation": "oneToMany", "target": "api::product-color.product-color" },
+    "packages": { "type": "relation", "relation": "oneToMany", "target": "api::package-option.package-option" },
+    "extraOptions": { "type": "relation", "relation": "oneToMany", "target": "api::extra-option.extra-option" },
+    "technicalSpecs": { "type": "relation", "relation": "oneToMany", "target": "api::technical-spec.technical-spec" },
+    "features": { "type": "relation", "relation": "oneToMany", "target": "api::feature.feature" },
+    "faqs": { "type": "relation", "relation": "oneToMany", "target": "api::faq.faq" },
+
+    // Embedded Config (JSONB)
+    "config": {
+      "type": "json",
+      "default": {
+        "shippingCostPerPackage": 25,
+        "sqmPerPackage": 3,
+        "minOrderSqm": 0.5,
+        "negotiationThresholdSqm": 50,
+        "defaultPackageId": "standard-plus",
+        "defaultColorId": 2
+      }
+    },
+
+    // Theme override (optional)
+    "theme": {
+      "type": "json",
+      "default": null  // Uses CLAUDE.md defaults if null
+    }
+  }
+}
+5. Order (NEW - Collection for submitted orders)
+{
+  "singularName": "order",
+  "pluralName": "orders",
+  "displayName": "Order",
+  "attributes": {
+    // Order Info
+    "orderNumber": { "type": "string", "unique": true },  // Auto-generated: ORD-20250106-001
+    "status": {
+      "type": "enumeration",
+      "enum": ["new", "quoted", "confirmed", "in_production", "shipped", "completed", "cancelled"],
+      "default": "new"
+    },
+
+    // Customer Info
+    "customerEmail": { "type": "email", "required": true },
+    "customerPhone": { "type": "string", "required": true },
+    "customerAddress": { "type": "text", "required": true },
+    "customerPostalCode": { "type": "string" },
+    "customerCity": { "type": "string" },
+    "invoiceData": { "type": "text" },  // Optional company details
+    "notes": { "type": "text" },        // Customer notes
+
+    // Product Configuration
+    "product": { "type": "relation", "relation": "manyToOne", "target": "api::product.product" },
+    "selectedColor": { "type": "relation", "relation": "manyToOne", "target": "api::product-color.product-color" },
+    "selectedPackage": { "type": "relation", "relation": "manyToOne", "target": "api::package-option.package-option" },
+    "selectedExtras": { "type": "relation", "relation": "oneToMany", "target": "api::extra-option.extra-option" },
+
+    "sqm": { "type": "decimal", "required": true },
+    "widthType": { "type": "enumeration", "enum": ["random", "fixed"] },
+    "fixedWidth": { "type": "decimal" },  // If widthType = 'fixed'
+
+    // Pricing (snapshot at order time)
+    "pricePerSqm": { "type": "decimal" },
+    "productTotal": { "type": "decimal" },
+    "shippingTotal": { "type": "decimal" },
+    "grandTotal": { "type": "decimal" },
+    "priceBreakdown": { "type": "json" },  // Store detailed breakdown
+
+    // Admin Notes & Communication
+    "adminNotes": { "type": "text" },
+    "quoteSentAt": { "type": "datetime" },
+    "confirmedAt": { "type": "datetime" },
+    "shippedAt": { "type": "datetime" },
+
+    // Metadata
+    "submittedAt": { "type": "datetime" },
+    "ipAddress": { "type": "string" },
+    "userAgent": { "type": "string" }
+  }
+}
+2. ProductColor (Collection)
+{
+  "singularName": "product-color",
+  "pluralName": "product-colors",
+  "attributes": {
+    "product": { "type": "relation", "relation": "manyToOne", "target": "api::product.product" },
+    "name": { "type": "string", "required": true },
+    "colorCode": { "type": "string" },  // HEX color
+    "gradient": { "type": "string" },   // CSS gradient
+    "extraCost": { "type": "decimal", "default": 0 },
+    "sortOrder": { "type": "integer", "default": 0 },
+    "isActive": { "type": "boolean", "default": true },
+    "image": { "type": "media", "allowedTypes": ["images"] }
+  }
+}
+3. PackageOption (Collection)
+{
+  "singularName": "package-option",
+  "pluralName": "package-options",
+  "attributes": {
+    "product": { "type": "relation", "relation": "manyToOne", "target": "api::product.product" },
+    "name": { "type": "string", "required": true },
+    "displayRange": { "type": "string" },  // "50-100 cm"
+    "pricePerSqm": { "type": "decimal", "required": true },
+    "isPopular": { "type": "boolean", "default": false },
+    "description": { "type": "text" },
+    "sortOrder": { "type": "integer", "default": 0 },
+    "isActive": { "type": "boolean", "default": true }
+  }
+}
+4. ExtraOption, TechnicalSpec, Feature, FAQ
+Similar structure with:
+Relation to Product
+Content fields (name, description, etc.)
+sortOrder
+isActive
+🔧 Implementation Phases
+Phase 1: Extract Reusable Components (Week 1)
+Goal: Break monolith into components WITHOUT changing functionality
+Step 1.1: Extract Basic UI Components
+Files to create:
+src/components/ui/Button.jsx
+import { customStyles } from '../../config/theme';
+
+export function Button({
+  variant = 'primary',
+  disabled,
+  loading,
+  children,
+  onClick,
+  ...props
+}) {
+  // Extract button styling from lines 431-443, 518-527
+}
+src/components/ui/FormField.jsx
+export function FormField({
+  label,
+  error,
+  hint,
+  required,
+  ...inputProps
+}) {
+  // Extract from lines 977-1002
+}
+src/components/ui/Card.jsx
+src/components/ui/Section.jsx
+src/components/ui/Badge.jsx
+Modified file:
+src/AntikHolzOrderForm.jsx - Replace inline JSX with component imports
+Testing: Verify form still works identically
+Step 1.2: Extract Product Components
+Files to create:
+src/components/product/ColorSwatch.jsx
+export function ColorSwatch({
+  color,
+  selected,
+  onSelect
+}) {
+  // Extract from lines 627-700
+}
+src/components/product/PricingCard.jsx (lines 724-817)
+src/components/product/FeatureCard.jsx (lines 887-914)
+src/components/product/SpecRow.jsx (lines 860-873)
+src/components/product/FAQItem.jsx (lines 1216-1242)
+Step 1.3: Extract Layout Components
+Files to create:
+src/components/layout/Header.jsx (lines 376-446)
+src/components/layout/Hero.jsx (lines 451-603)
+src/components/layout/Footer.jsx (lines 1250-1348)
+Phase 2: Extract Business Logic (Week 1-2)
+Step 2.1: Create Utility Functions
+Files to create:
+src/lib/utils/pricing.js
+/**
+ * Calculate order price breakdown
+ * Extracted from lines 178-220 (useMemo)
+ */
+export function calculatePrice({
+  sqm,
+  basePrice,
+  colorExtraCost,
+  extrasTotal,
+  shippingPerPackage,
+  sqmPerPackage
+}) {
+  const packagesNeeded = Math.ceil(sqm / sqmPerPackage);
+  const pricePerSqm = basePrice + colorExtraCost + extrasTotal;
+  const productTotal = sqm * pricePerSqm;
+  const shippingTotal = packagesNeeded * shippingPerPackage;
+  const grandTotal = productTotal + shippingTotal;
+
+  return {
+    sqm,
+    pricePerSqm,
+    productTotal,
+    packagesNeeded,
+    shippingTotal,
+    grandTotal,
+    breakdown: {
+      base: basePrice,
+      color: colorExtraCost,
+      extras: extrasTotal
+    }
+  };
+}
+src/lib/utils/orderSummary.js
+/**
+ * Generate order summary text
+ * Extracted from lines 342-373
+ */
+export function generateOrderSummary(params) {
+  // Template generation logic
+}
+src/lib/validation/orderSchema.js
+import { z } from 'zod';
+
+export const orderFormSchema = z.object({
+  sqm: z.number().positive("Podaj metraż większy od 0"),
+  packageId: z.string().min(1, "Wybierz pakiet"),
+  colorId: z.number().int().positive("Wybierz kolor"),
+  // ... rest from lines 275-309
+});
+Step 2.2: Create Custom Hooks
+Files to create:
+src/hooks/useOrderForm.js
+import { useState } from 'react';
+
+export function useOrderForm(initialData) {
+  const [formData, setFormData] = useState(initialData);
+  const [errors, setErrors] = useState({});
+
+  const handleFieldChange = (field) => (e) => {
+    const value = e.target.value;
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: null }));
+    }
+  };
+
+  const validateForm = () => {
+    // Use Zod schema
+  };
+
+  return {
+    formData,
+    errors,
+    handleFieldChange,
+    validateForm,
+    setFormData,
+    setErrors
+  };
+}
+src/hooks/usePriceCalculation.js
+import { useMemo } from 'react';
+import { calculatePrice } from '../lib/utils/pricing';
+
+export function usePriceCalculation(formData, catalog) {
+  return useMemo(() => {
+    // Extract calculation logic
+  }, [formData.sqm, formData.packageId, formData.colorId, formData.extras]);
+}
+src/hooks/useProductCatalog.js
+import { useQuery } from '@tanstack/react-query';
+import { fetchProduct } from '../lib/api/strapi';
+
+export function useProductCatalog(productSlug) {
+  return useQuery({
+    queryKey: ['product', productSlug],
+    queryFn: () => fetchProduct(productSlug),
+    staleTime: 1000 * 60 * 5 // 5 min cache
+  });
+}
+Phase 3: Move Data to External Files (Week 2)
+Goal: Decouple data from code (preparation for CMS)
+Step 3.1: Create JSON Catalog Files
+Files to create:
+src/data/stare-deski.json
+{
+  "id": "stare-deski",
+  "name": "Stare Deski Rustykalne",
+  "slug": "stare-deski",
+  "colors": [
+    { "id": 1, "name": "Jasny brąz", "color": "#C4A269", ... }
+  ],
+  "packages": [
+    { "id": "standard-plus", "name": "STANDARD+", ... }
+  ],
+  "extraOptions": [...],
+  "specs": [...],
+  "features": [...],
+  "faqs": [...],
+  "config": {
+    "shippingCostPerPackage": 25,
+    "sqmPerPackage": 3
+  }
+}
+Step 3.2: Create Data Loader
+Files to create:
+src/lib/api/catalog.js
+import stareDeskiData from '../../data/stare-deski.json';
+
+// Mock API that returns local JSON
+// Will be replaced with Strapi API later
+export async function fetchProduct(slug) {
+  await new Promise(resolve => setTimeout(resolve, 100)); // Simulate network
+
+  if (slug === 'stare-deski') {
+    return stareDeskiData;
+  }
+
+  throw new Error('Product not found');
+}
+Modified file:
+Update useProductCatalog hook to use this loader
+Phase 4: Implement Strapi Backend (Week 3)
+Step 4.1: Setup Strapi Project
+Commands:
+cd backend
+npx create-strapi-app@latest . --quickstart
+Step 4.2: Create Content Types
+Create Product collection type (via Strapi admin)
+Create ProductColor, PackageOption, ExtraOption collections
+Create TechnicalSpec, Feature, FAQ collections
+Set up relations between collections
+Step 4.3: Seed Initial Data
+Files to create:
+backend/src/seed/stare-deski-seed.js
+// Import data from src/data/stare-deski.json
+// Create Strapi entries programmatically
+Step 4.4: Configure API Permissions
+Enable public read access for Product API
+Restrict write access to authenticated admins
+Phase 5: Connect Frontend to Strapi (Week 3-4)
+Step 5.1: Create Strapi API Client
+Files to create:
+src/lib/api/strapi.js
+const STRAPI_URL = import.meta.env.VITE_STRAPI_URL || 'http://localhost:1337';
+
+export async function fetchProduct(slug) {
+  const response = await fetch(
+    `${STRAPI_URL}/api/products?filters[slug][$eq]=${slug}&populate=deep`
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch product');
+  }
+
+  const data = await response.json();
+  return transformStrapiResponse(data);
+}
+
+function transformStrapiResponse(strapiData) {
+  // Transform Strapi format to app format
+}
+Step 5.2: Update Data Loader with Fallback
+Modified file:
+src/lib/api/catalog.js
+import { fetchProduct as fetchFromStrapi } from './strapi';
+import stareDeskiData from '../../data/stare-deski.json';
+
+export async function fetchProduct(slug) {
+  try {
+    return await fetchFromStrapi(slug);
+  } catch (error) {
+    console.warn('Strapi unavailable, using local data', error);
+    // Fallback to JSON
+    if (slug === 'stare-deski') return stareDeskiData;
+    throw error;
+  }
+}
+Step 5.3: Install TanStack Query
+Commands:
+npm install @tanstack/react-query
+Modified file:
+src/App.jsx
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+const queryClient = new QueryClient();
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AntikHolzOrderForm />
+    </QueryClientProvider>
+  );
+}
+Phase 6: Create Generic Product Configurator (Week 4)
+Goal: Make form work with ANY product from CMS
+Step 6.1: Create ProductConfigurator Component
+Files to create:
+src/features/order-form/ProductConfigurator.jsx
+import { useProductCatalog } from '../../hooks/useProductCatalog';
+import { ColorSection } from '../catalog/ColorSection';
+import { PackageSection } from '../catalog/PackageSection';
+import { OrderForm } from './OrderForm';
+
+export function ProductConfigurator({ productSlug }) {
+  const { data: product, isLoading, error } = useProductCatalog(productSlug);
+
+  if (isLoading) return <LoadingSpinner />;
+  if (error) return <ErrorMessage error={error} />;
+
+  return (
+    <div>
+      <Hero product={product} />
+      <ColorSection colors={product.colors} />
+      <PackageSection packages={product.packages} />
+      <SpecSection specs={product.technicalSpecs} />
+      <OrderForm product={product} />
+      <FAQSection faqs={product.faqs} />
+    </div>
+  );
+}
+Step 6.2: Update Main Component
+Modified file:
+src/AntikHolzOrderForm.jsx
+import { ProductConfigurator } from './features/order-form/ProductConfigurator';
+
+const AntikHolzOrderForm = () => {
+  return <ProductConfigurator productSlug="stare-deski" />;
+};
+Phase 7: Multi-Product Support + Admin Panel (Week 5)
+Step 7.1: Create Product Pages (Customer View)
+Files to create:
+src/pages/customer/StareDescki.jsx
+import { ProductConfigurator } from '../../features/customer/order-form/ProductConfigurator';
+
+export function StareDescki() {
+  return <ProductConfigurator productSlug="stare-deski" />;
+}
+src/pages/customer/Belki.jsx (for future)
+src/pages/customer/PaneleScienne.jsx (for future)
+Step 7.2: Create Admin Panel (NEW)
+Files to create:
+src/pages/admin/Login.jsx
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+export function AdminLogin() {
+  const [password, setPassword] = useState('');
+  const navigate = useNavigate();
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    // Simple password check (will use Strapi auth later)
+    if (password === 'admin123') {  // TEMP: Replace with real auth
+      localStorage.setItem('adminAuth', 'true');
+      navigate('/admin/dashboard');
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <form onSubmit={handleLogin}>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Admin Password"
+        />
+        <button type="submit">Login</button>
+      </form>
+    </div>
+  );
+}
+src/pages/admin/Dashboard.jsx
+import { AdminLayout } from '../../components/layout/AdminLayout';
+import { DashboardHome } from '../../features/admin/dashboard/DashboardHome';
+
+export function AdminDashboard() {
+  return (
+    <AdminLayout>
+      <DashboardHome />
+    </AdminLayout>
+  );
+}
+src/pages/admin/Orders.jsx
+import { AdminLayout } from '../../components/layout/AdminLayout';
+import { OrderList } from '../../features/admin/orders/OrderList';
+
+export function AdminOrders() {
+  return (
+    <AdminLayout>
+      <OrderList />
+    </AdminLayout>
+  );
+}
+src/pages/admin/Catalog.jsx
+import { AdminLayout } from '../../components/layout/AdminLayout';
+import { ProductList } from '../../features/admin/catalog/ProductList';
+
+export function AdminCatalog() {
+  return (
+    <AdminLayout>
+      <ProductList />
+    </AdminLayout>
+  );
+}
+Step 7.3: Add Routing (Required)
+npm install react-router-dom
+Modified file:
+src/App.jsx
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+
+// Customer pages
+import { StareDescki } from './pages/customer/StareDescki';
+import { Belki } from './pages/customer/Belki';
+
+// Admin pages
+import { AdminLogin } from './pages/admin/Login';
+import { AdminDashboard } from './pages/admin/Dashboard';
+import { AdminOrders } from './pages/admin/Orders';
+import { AdminCatalog } from './pages/admin/Catalog';
+
+// Protected route wrapper
+function ProtectedRoute({ children }) {
+  const isAuth = localStorage.getItem('adminAuth') === 'true';
+  return isAuth ? children : <Navigate to="/admin/login" />;
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <Routes>
+          {/* Customer Routes */}
+          <Route path="/" element={<StareDescki />} />
+          <Route path="/belki" element={<Belki />} />
+          <Route path="/panele" element={<PaneleScienne />} />
+
+          {/* Admin Routes */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/orders"
+            element={
+              <ProtectedRoute>
+                <AdminOrders />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/catalog"
+            element={
+              <ProtectedRoute>
+                <AdminCatalog />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </BrowserRouter>
+    </QueryClientProvider>
+  );
+}
+Step 7.4: Create Admin API Hooks
+Files to create:
+src/hooks/useOrders.js
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { fetchOrders, updateOrderStatus } from '../lib/api/strapi';
+
+export function useOrders() {
+  return useQuery({
+    queryKey: ['orders'],
+    queryFn: fetchOrders
+  });
+}
+
+export function useUpdateOrderStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ orderId, status }) => updateOrderStatus(orderId, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['orders']);
+    }
+  });
+}
+src/lib/api/strapi.js (extend existing)
+// Add order management functions
+export async function fetchOrders() {
+  const response = await fetch(`${STRAPI_URL}/api/orders?populate=*&sort=createdAt:desc`);
+  return response.json();
+}
+
+export async function updateOrderStatus(orderId, status) {
+  const response = await fetch(`${STRAPI_URL}/api/orders/${orderId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${getAdminToken()}`  // From localStorage
+    },
+    body: JSON.stringify({ data: { status } })
+  });
+  return response.json();
+}
+Phase 8: Theme Configuration (Week 5)
+Step 8.1: Extract Theme to Config
+Files to create:
+src/config/theme.js
+/**
+ * ANTIK-HOLZ Design System
+ * Based on CLAUDE.md specifications
+ */
+export const customStyles = {
+  primaryColor: '#2C2420',
+  primaryLight: '#8B7355',
+  bgLight: '#FFFFFF',
+  bgOffWhite: '#FAFAF9',
+  bgGray: '#F5F5F4',
+  bgBeige: '#FAF8F5',
+  textPrimary: '#1A1512',
+  textSecondary: '#57534E',
+  textMuted: '#A8A29E',
+  heroGradient: 'linear-gradient(180deg, #FFFFFF 0%, #FAF8F5 100%)',
+  cardGradient: 'linear-gradient(135deg, #FFFFFF 0%, #F5F5F4 100%)',
+};
+
+/**
+ * Merge product-specific theme overrides with defaults
+ */
+export function mergeTheme(productTheme) {
+  if (!productTheme) return customStyles;
+  return { ...customStyles, ...productTheme };
+}
+Step 8.2: Use Theme Throughout Components
+Modified files:
+All component files - import from config/theme.js instead of hardcoding
+🧪 Testing Strategy
+Phase 1-2 Testing
+Visual regression: Compare screenshots before/after component extraction
+Functional: All form inputs, validation, price calculation must work identically
+Phase 3 Testing
+Test with JSON data matches hardcoded data
+Price calculations produce same results
+Phase 4-5 Testing
+Test Strapi API endpoints with Postman/Insomnia
+Test frontend with Strapi running
+Test fallback to local JSON when Strapi is down
+Phase 6-7 Testing
+Create second test product in Strapi
+Verify ProductConfigurator renders both products correctly
+Verify CLAUDE.md styling applies to both
+📝 Critical Files Reference
+Files to Modify (Gradual Refactoring)
+src/AntikHolzOrderForm.jsx - Main component (lines 1-1356)
+Extract components gradually
+Eventually becomes thin wrapper
+Files to Create (120+ new files)
+35 component files (ui, product, layout, admin)
+6 hook files (useOrderForm, usePriceCalculation, useOrders, etc.)
+8 utility/lib files (pricing, validation, API client, auth)
+1 JSON data file (stare-deski.json)
+7 page files (3 customer + 4 admin)
+Strapi backend (entire backend/ directory with Order collection)
+Files to Keep Unchanged
+CLAUDE.md - Design system source of truth
+package.json - Add dependencies only
+README.md - Update with new architecture docs
+🚀 Migration Rollout
+Week 1: Foundation
+✅ Extract all UI components
+✅ Extract business logic to utils
+✅ Create custom hooks
+✅ Test: Everything still works
+Week 2: Data Layer
+✅ Move data to JSON files
+✅ Create data loader with mock API
+✅ Test: Data loads from JSON
+Week 3: Backend
+✅ Setup Strapi
+✅ Create content types
+✅ Seed initial data
+✅ Create API client
+✅ Test: Frontend fetches from Strapi
+Week 4: Genericization
+✅ Create ProductConfigurator
+✅ Make all components data-driven
+✅ Test: Works with different product configs
+Week 5: Multi-Product + Admin Panel
+✅ Add routing (customer + admin routes)
+✅ Create product pages (customer view)
+✅ Create admin login page
+✅ Create admin dashboard (orders, catalog)
+✅ Create Order collection in Strapi
+✅ Implement order submission from customer form
+✅ Implement order management in admin panel
+✅ Test: Submit order from customer view, manage in admin view
+✅ Success Criteria
+Functionality - Customer View
+ All original features work (order form, price calc, validation)
+ Can submit order successfully
+ Receives confirmation message after submission
+ Form validates correctly with Zod schemas
+ Product data loads from Strapi/JSON
+Functionality - Admin View
+ Can log in to admin panel (simple password)
+ Can view list of all submitted orders
+ Can see order details (customer info, product config, pricing)
+ Can update order status (new → quoted → confirmed → shipped → completed)
+ Can view/edit product catalog via Strapi admin panel
+ Can add new colors/packages via Strapi admin panel
+ Can change pricing in Strapi, reflects immediately on customer view
+Design Consistency
+ All components follow CLAUDE.md guidelines
+ Colors match specification (primaryColor #2C2420, etc.)
+ Typography scales match CLAUDE.md
+ Transitions are 200-300ms as specified
+ Hover states work on all interactive elements
+Performance
+ Initial page load < 2s
+ Product data cached (no refetch on navigation)
+ Form interactions feel instant (no lag)
+Developer Experience
+ Can add new product in < 30 minutes
+ Clear component hierarchy
+ Reusable components well-documented
+ Easy to understand where to make changes
+🔐 Environment Variables
+Frontend (.env)
+VITE_STRAPI_URL=http://localhost:1337
+Backend (.env)
+DATABASE_CLIENT=postgres
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_NAME=antikholz
+DATABASE_USERNAME=strapi
+DATABASE_PASSWORD=strapi
+JWT_SECRET=<generate-random-secret>
+📦 New Dependencies
+Frontend:
+{
+  "@tanstack/react-query": "^5.x",
+  "react-hook-form": "^7.x",
+  "zod": "^3.x",
+  "react-router-dom": "^6.x"
+}
+Backend:
+npx create-strapi-app@latest backend --quickstart
+🎨 Design System Compliance
+All new components MUST follow CLAUDE.md:
+Color Usage
+import { customStyles } from '../config/theme';
+
+// ✅ CORRECT
+<button style={{ backgroundColor: customStyles.primaryColor }}>
+
+// ❌ WRONG
+<button style={{ backgroundColor: '#2C2420' }}>
+Component Patterns
+Buttons: Follow CLAUDE.md lines 201-251
+Inputs: Follow CLAUDE.md lines 253-290
+Cards: Follow CLAUDE.md lines 292-322
+Transitions
+All: transition: 'all 200ms'
+Hover opacity: opacity: 0.9
+🔄 Rollback Plan
+Each phase is independent. If issues arise:
+Phase 1-2 issues: Git revert to monolithic component
+Phase 3 issues: Switch back to hardcoded arrays
+Phase 4-5 issues: Use JSON fallback (already built in)
+Phase 6-7 issues: Use single-product mode
+📚 Documentation to Create
+CONTRIBUTING.md - How to add new products
+ARCHITECTURE.md - System architecture diagram
+STRAPI_GUIDE.md - How to use Strapi admin
+COMPONENT_LIBRARY.md - Storybook-style component docs
+🎯 Next Steps After Plan Approval
+Create new branch: git checkout -b refactor/multi-product-cms
+Start with Phase 1.1: Extract Button component
+Test after each component extraction
+Commit frequently with descriptive messages
+Review CLAUDE.md before creating each component
+End of Plan
+User approved the plan
