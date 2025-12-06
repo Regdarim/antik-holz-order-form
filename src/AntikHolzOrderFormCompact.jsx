@@ -28,8 +28,6 @@ const COLORS = [
       'https://antikholzprofis.com/wp-content/uploads/2024/01/jasny-braz-1.jpg',
       'https://antikholzprofis.com/wp-content/uploads/2024/01/jasny-braz-2.jpg',
       'https://antikholzprofis.com/wp-content/uploads/2024/01/jasny-braz-3.jpg',
-      'https://antikholzprofis.com/wp-content/uploads/2024/01/jasny-braz-4.jpg',
-      'https://antikholzprofis.com/wp-content/uploads/2024/01/jasny-braz-5.jpg',
     ]
   },
   {
@@ -41,8 +39,6 @@ const COLORS = [
       'https://antikholzprofis.com/wp-content/uploads/2024/01/naturalny-mix-1.jpg',
       'https://antikholzprofis.com/wp-content/uploads/2024/01/naturalny-mix-2.jpg',
       'https://antikholzprofis.com/wp-content/uploads/2024/01/naturalny-mix-3.jpg',
-      'https://antikholzprofis.com/wp-content/uploads/2024/01/naturalny-mix-4.jpg',
-      'https://antikholzprofis.com/wp-content/uploads/2024/01/naturalny-mix-5.jpg',
     ]
   },
   {
@@ -54,8 +50,6 @@ const COLORS = [
       'https://antikholzprofis.com/wp-content/uploads/2024/01/szary-1.jpg',
       'https://antikholzprofis.com/wp-content/uploads/2024/01/szary-2.jpg',
       'https://antikholzprofis.com/wp-content/uploads/2024/01/szary-3.jpg',
-      'https://antikholzprofis.com/wp-content/uploads/2024/01/szary-4.jpg',
-      'https://antikholzprofis.com/wp-content/uploads/2024/01/szary-5.jpg',
     ]
   },
   {
@@ -67,8 +61,6 @@ const COLORS = [
       'https://antikholzprofis.com/wp-content/uploads/2024/01/mix-1.jpg',
       'https://antikholzprofis.com/wp-content/uploads/2024/01/mix-2.jpg',
       'https://antikholzprofis.com/wp-content/uploads/2024/01/mix-3.jpg',
-      'https://antikholzprofis.com/wp-content/uploads/2024/01/mix-4.jpg',
-      'https://antikholzprofis.com/wp-content/uploads/2024/01/mix-5.jpg',
     ]
   },
   {
@@ -80,8 +72,6 @@ const COLORS = [
       'https://antikholzprofis.com/wp-content/uploads/2024/01/ciemny-braz-1.jpg',
       'https://antikholzprofis.com/wp-content/uploads/2024/01/ciemny-braz-2.jpg',
       'https://antikholzprofis.com/wp-content/uploads/2024/01/ciemny-braz-3.jpg',
-      'https://antikholzprofis.com/wp-content/uploads/2024/01/ciemny-braz-4.jpg',
-      'https://antikholzprofis.com/wp-content/uploads/2024/01/ciemny-braz-5.jpg',
     ]
   },
 ];
@@ -173,13 +163,27 @@ ${formData.notes ? `Uwagi: ${formData.notes}` : ''}
 
     const pricePerSqm = basePrice + colorExtra + extrasTotal;
     const total = sqm * pricePerSqm;
-    const shipping = Math.ceil(sqm / 3) * 25;
+
+    // Transport: do 12m² wysyłka DPD po 25zł za każde 3m² (ok 30kg)
+    // Powyżej 12m² - transport paletowy, wycena indywidualna
+    let shipping = 0;
+    let shippingNote = '';
+
+    if (sqm > 0 && sqm <= 12) {
+      shipping = Math.ceil(sqm / 3) * 25;
+      shippingNote = `DPD - ${Math.ceil(sqm / 3)} paczek x 25 zł`;
+    } else if (sqm > 12) {
+      shipping = 0;
+      shippingNote = 'Transport paletowy - wycena indywidualna';
+    }
 
     return {
       pricePerSqm,
       subtotal: total,
       shipping,
+      shippingNote,
       total: total + shipping,
+      requiresCustomShipping: sqm > 12,
     };
   }, [formData]);
 
@@ -208,10 +212,13 @@ ${formData.notes ? `Uwagi: ${formData.notes}` : ''}
               <div className="text-center">
                 <p className="text-xs opacity-75" style={{ color: '#FFFFFF' }}>Twoje zamówienie:</p>
                 <p className="text-3xl font-bold text-white">
-                  {calculatedPrice.total.toFixed(0)} zł
+                  {calculatedPrice.requiresCustomShipping ? '?' : calculatedPrice.total.toFixed(0)} zł
                 </p>
                 <p className="text-xs opacity-75" style={{ color: '#FFFFFF' }}>
-                  {formData.sqm} m² × {calculatedPrice.pricePerSqm} zł + wysyłka {calculatedPrice.shipping} zł
+                  {calculatedPrice.requiresCustomShipping
+                    ? `${formData.sqm} m² - ${calculatedPrice.shippingNote}`
+                    : `${formData.sqm} m² × ${calculatedPrice.pricePerSqm} zł + ${calculatedPrice.shippingNote}`
+                  }
                 </p>
               </div>
             )}
@@ -255,7 +262,7 @@ ${formData.notes ? `Uwagi: ${formData.notes}` : ''}
               </label>
               <input
                 type="number"
-                step="0.1"
+                step="1"
                 min="1"
                 value={formData.sqm}
                 onChange={(e) => setFormData({...formData, sqm: e.target.value})}
@@ -267,7 +274,7 @@ ${formData.notes ? `Uwagi: ${formData.notes}` : ''}
                 }}
               />
               <p className="text-xs mt-1" style={{ color: customStyles.textMuted }}>
-                +10% zapasu zalecane
+                Tylko pełne metry kwadratowe (+10% zapasu zalecane)
               </p>
             </div>
 
@@ -308,7 +315,7 @@ ${formData.notes ? `Uwagi: ${formData.notes}` : ''}
 
               {/* Galeria zdjęć wybranego koloru */}
               {formData.colorId && (
-                <div className="mt-4 grid grid-cols-5 gap-2" style={{ height: '280px' }}>
+                <div className="mt-4 grid grid-cols-3 gap-2" style={{ height: '280px' }}>
                   {COLORS.find(c => c.id === formData.colorId)?.gallery.map((img, index) => (
                     <div
                       key={index}
@@ -330,7 +337,7 @@ ${formData.notes ? `Uwagi: ${formData.notes}` : ''}
             {/* 3. PAKIET */}
             <div>
               <label className="block text-sm font-bold mb-2" style={{ color: customStyles.textPrimary }}>
-                3. Długość desek *
+                3. Pakiety z zakresami długości *
               </label>
               <select
                 value={formData.packageId}
@@ -462,7 +469,7 @@ ${formData.notes ? `Uwagi: ${formData.notes}` : ''}
                 className="px-4 py-2 text-sm font-medium text-white transition-all hover:opacity-90"
                 style={{ backgroundColor: copySuccess ? '#10B981' : customStyles.primaryColor }}
               >
-                {copySuccess ? 'Skopiowano!' : 'Kopiuj do schowka'}
+                {copySuccess ? 'Skopiowano!' : 'Kopiuj do schowka dane zamówienia'}
               </button>
             </div>
 
@@ -488,12 +495,17 @@ ${formData.notes ? `Uwagi: ${formData.notes}` : ''}
                 <div className="flex justify-between text-lg">
                   <span className="font-bold" style={{ color: customStyles.textPrimary }}>RAZEM:</span>
                   <span className="font-bold text-2xl" style={{ color: customStyles.primaryColor }}>
-                    {calculatedPrice.total.toFixed(0)} zł
+                    {calculatedPrice.requiresCustomShipping ? '?' : calculatedPrice.total.toFixed(0)} zł
                   </span>
                 </div>
                 <p className="text-xs mt-1 text-right" style={{ color: customStyles.textMuted }}>
-                  w tym wysyłka: {calculatedPrice.shipping} zł
+                  {calculatedPrice.shippingNote}
                 </p>
+                {calculatedPrice.requiresCustomShipping && (
+                  <p className="text-xs mt-1 text-right font-bold" style={{ color: customStyles.primaryColor }}>
+                    Skontaktujemy się w sprawie wyceny transportu
+                  </p>
+                )}
               </div>
             </div>
           </section>
